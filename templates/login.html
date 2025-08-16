@@ -19,6 +19,11 @@
             align-items: center;
             justify-content: center;
             font-family: 'Segoe UI', Arial, sans-serif;
+            flex-direction: column;
+        }
+        .error-messages {
+            width: 380px;
+            margin-bottom: 1.5rem;
         }
         .login-card {
             width: 380px;
@@ -55,16 +60,20 @@
     </style>
 </head>
 <body>
-<div class="login-card">
-    <div class="login-title">Tapiro</div>
-    <div class="login-subtitle">Welcome back! Please sign in.</div>
-
-    <form action="/login" method="post" autocomplete="on">
-        <input type="hidden" name="tag" value="{{ tag }}">
-        <sl-input name="email" id="email" label="Email" required clearable autocomplete="email"></sl-input>
-        <sl-input name="password" id="password" type="password" label="Password" required clearable autocomplete="current-password"></sl-input>
-        <sl-button type="submit" variant="primary">Login</sl-button>
-    </form>
-</div>
+    <div class="error-messages">
+        {% for error in errors %}
+            <sl-alert open variant="danger" class="error-message">{{ error }}</sl-alert>
+        {% endfor %}
+    </div>
+    <div class="login-card">
+        <div class="login-title">Tapiro</div>
+        <div class="login-subtitle">Welcome back! Please sign in.</div>
+        <form action="/login" method="post" autocomplete="on">
+            <input type="hidden" name="tag" value="{{ tag }}">
+            <sl-input name="email" id="email" label="Email" required clearable autocomplete="email"></sl-input>
+            <sl-input name="password" id="password" type="password" label="Password" required clearable autocomplete="current-password"></sl-input>
+            <sl-button type="submit" variant="primary">Login</sl-button>
+        </form>
+    </div>
 </body>
 </html>

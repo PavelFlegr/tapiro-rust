@@ -19,6 +19,7 @@
             align-items: center;
             justify-content: center;
             font-family: 'Segoe UI', Arial, sans-serif;
+            flex-direction: column;
         }
         .register-card {
             width: 400px;
@@ -52,9 +53,18 @@
             width: 100%;
             font-size: 1.1rem;
         }
+        .error-messages {
+            width: 380px;
+            margin-bottom: 1.5rem;
+        }
     </style>
 </head>
 <body>
+    <div class="error-messages">
+        {% for error in errors %}
+            <sl-alert open variant="danger" class="error-message">{{ error }}</sl-alert>
+        {% endfor %}
+    </div>
 <div class="register-card">
     <div class="register-title">Tapiro</div>
     <div class="register-subtitle">Create your account</div>

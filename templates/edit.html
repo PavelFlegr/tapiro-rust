@@ -49,6 +49,7 @@
             align-items: center;
             justify-content: center;
             font-family: 'Segoe UI', Arial, sans-serif;
+            flex-direction: column;
         }
         .edit-card {
             width: 600px;
@@ -97,13 +98,25 @@
             width: 100%;
             font-size: 1.1rem;
         }
+        .messages {
+            width: 600px;
+            margin-bottom: 1.5rem;
+        }
     </style>
 </head>
 <body>
+    <div class="messages">
+        {% for message in messages %}
+            <sl-alert open variant="success" class="success-message">{{ message }}</sl-alert>
+        {% endfor %}
+        {% for error in errors %}
+            <sl-alert open variant="danger" class="error-message">{{ error }}</sl-alert>
+        {% endfor %}
+    </div>
 <div class="edit-card">
     <div class="edit-title">Tapiro</div>
     <div class="edit-subtitle">Manage your profile links</div>
-
+    
     <form action="/edit" method="post">
         <div id="link-container">
             {# Existing links #}
