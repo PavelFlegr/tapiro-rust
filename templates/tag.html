@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tapiro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css"
+    />
+    <script
+        type="module"
+        src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js">
+    </script>
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(120deg, #f0f4ff 0%, #e0e7ef 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .profile-header {
+            margin-top: 3rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .avatar {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: #64748b;
+            margin-bottom: 1.2rem;
+            box-shadow: 0 2px 12px rgba(60, 72, 88, 0.10);
+        }
+        .profile-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 0.3rem;
+        }
+        .profile-desc {
+            color: #6b7280;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        .links-list {
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+            margin-bottom: 2rem;
+        }
+        .link-card {
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 2px 16px rgba(60, 72, 88, 0.10);
+            padding: 0.7rem 1.2rem;
+            display: flex;
+            align-items: center;
+            transition: box-shadow 0.2s;
+        }
+        .link-card:hover {
+            box-shadow: 0 4px 24px rgba(60, 72, 88, 0.16);
+        }
+        .link-icon {
+            font-size: 1.4rem;
+            margin-right: 0.9rem;
+            color: #2563eb;
+        }
+        .link-url {
+            flex: 1;
+            text-align: left;
+            font-size: 1.1rem;
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+<div class="profile-header">
+    <div class="avatar">{{ initial }}</div>
+    <div class="profile-name">{{ name }}</div>
+</div>
+
+<div class="links-list">
+    {% for item in links %}
+    <div class="link-card">
+        <span class="link-icon">
+            <sl-icon name="link-45deg"></sl-icon>
+        </span>
+        <a class="link-url" href="{{ item }}" target="_blank" rel="noopener">{{ item }}</a>
+    </div>
+    {% endfor %}
+</div>
+</body>
+</html>

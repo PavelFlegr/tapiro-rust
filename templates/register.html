@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tapiro - Register</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css"
+    />
+    <script
+        type="module"
+        src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js">
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ef 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .register-card {
+            width: 400px;
+            padding: 2.5rem 2rem 2rem 2rem;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 32px rgba(60, 72, 88, 0.12);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .register-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #2d3748;
+            letter-spacing: 1px;
+        }
+        .register-subtitle {
+            font-size: 1rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+        form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+        sl-button::part(base) {
+            width: 100%;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="register-card">
+    <div class="register-title">Tapiro</div>
+    <div class="register-subtitle">Create your account</div>
+
+    <form action="/register" method="post" autocomplete="on">
+        <input type="hidden" name="tag" value="{{ tag }}">
+        <sl-input name="name" id="name" required label="Name" autocomplete="name"></sl-input>
+        <sl-input name="email" id="email" required type="email" label="Email" autocomplete="email"></sl-input>
+        <sl-input name="password" id="password" type="password" required label="Password" autocomplete="new-password"></sl-input>
+        <sl-button type="submit" variant="primary">Register</sl-button>
+    </form>
+</div>
+</body>
+</html>

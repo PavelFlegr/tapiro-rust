@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tapiro - Welcome</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css"
+    />
+    <script
+            type="module"
+            src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js">
+    </script>
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(120deg, #f0f4ff 0%, #e0e7ef 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .landing-card {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 32px rgba(60, 72, 88, 0.12);
+            padding: 2.5rem 2.5rem 2rem 2.5rem;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .landing-title {
+            font-size: 2.3rem;
+            font-weight: 800;
+            color: #2563eb;
+            margin-bottom: 0.7rem;
+            letter-spacing: 1px;
+        }
+        .landing-desc {
+            font-size: 1.15rem;
+            color: #374151;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        .landing-actions {
+            display: flex;
+            gap: 1.2rem;
+            width: 100%;
+            justify-content: center;
+        }
+        sl-button::part(base) {
+            font-size: 1.1rem;
+            width: 120px;
+        }
+    </style>
+</head>
+<body>
+<div class="landing-card">
+    <div class="landing-title">Tapiro</div>
+    <div class="landing-desc">
+        Tapiro lets you create a profile with your own unique tag and share a list of your favorite links.
+        <br>
+        Assign a tag to your account, manage your links, and share your profile with others—perfect for social media,
+        business cards, or networking!
+    </div>
+    <div class="landing-actions">
+        <sl-button href="/login" variant="primary">Log In</sl-button>
+        <sl-button href="/register" variant="success">Register</sl-button>
+    </div>
+</div>
+</body>
+</html>

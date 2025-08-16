@@ -1,0 +1,129 @@
+{# templates/edit_links.html #}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tapiro - Edit Links</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css"
+    />
+    <script
+        type="module"
+        src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js">
+    </script>
+    <script>
+        function removeParent(button) {
+            button.parentNode.remove();
+        }
+
+        function addLink() {
+            const container = document.getElementById('link-container');
+            const div = document.createElement('div');
+            div.className = 'link-row';
+
+            const input = document.createElement('sl-input');
+            input.name = 'links';
+            input.placeholder = 'Paste your link here';
+            input.className = 'link-input';
+
+            const button = document.createElement('sl-button');
+            button.type = 'button';
+            button.variant = 'danger';
+            button.innerText = 'Remove';
+            button.style.marginLeft = '10px';
+            button.onclick = function () {
+                removeParent(this);
+            };
+
+            div.appendChild(input);
+            div.appendChild(button);
+            container.appendChild(div);
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ef 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .edit-card {
+            width: 600px;
+            padding: 2.5rem 2rem 2rem 2rem;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 32px rgba(60, 72, 88, 0.12);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .edit-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #2d3748;
+            letter-spacing: 1px;
+        }
+        .edit-subtitle {
+            font-size: 1rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+        form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+        #link-container {
+            width: 100%;
+            margin-bottom: 1.5rem;
+        }
+        .link-input {
+            flex: 1;
+        }
+        .link-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        sl-button.add-btn::part(base) {
+            width: 100%;
+        }
+        sl-button[type='submit']::part(base) {
+            width: 100%;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="edit-card">
+    <div class="edit-title">Tapiro</div>
+    <div class="edit-subtitle">Manage your profile links</div>
+
+    <form action="/edit" method="post">
+        <div id="link-container">
+            {# Existing links #}
+            {% for item in links %}
+            <div class="link-row">
+                <sl-input class="link-input"
+                          name="links"
+                          placeholder="Paste your link here"
+                          value="{{ item }}"></sl-input>
+                <sl-button type="button"
+                           variant="danger"
+                           onclick="removeParent(this)"
+                           style="margin-left:10px">Remove</sl-button>
+            </div>
+            {% endfor %}
+        </div>
+
+        <sl-button class="add-btn" type="button" onclick="addLink()" variant="primary">Add Link</sl-button>
+        <sl-button type="submit" variant="success">Save</sl-button>
+    </form>
+</div>
+</body>
+</html>
