@@ -1,4 +1,5 @@
 mod controller;
+mod service;
 
 use axum::{
     http::{Request, StatusCode}, routing::{get, post}, Router, ServiceExt

@@ -1,6 +1,5 @@
 use std::{str::FromStr, vec};
 
-use argon2::{Argon2, PasswordHash, password_hash::{rand_core::OsRng, PasswordHasher, PasswordVerifier, SaltString}};
 use askama::Template;
 use axum::{extract::{Path, Query, State}, http::StatusCode, response::{Html, IntoResponse, Redirect, Response}};
 use axum_extra::extract::Form;
@@ -8,7 +7,9 @@ use serde::{Deserialize, Serialize};
 use sqlx::types::Uuid;
 use tower_sessions::Session;
 
-use crate::AppState;
+use crate::{service::LoginOutcome, AppState};
+
+use crate::service;
 
 #[derive(Deserialize)]
 pub struct LinksRequest {
@@ -26,18 +27,15 @@ pub async fn update_links(session: Session, State(state): State<AppState>, Form(
     else {
         return Redirect::to("/login").into_response();
     };
-    
-    match sqlx::query!("UPDATE users SET links = $1 WHERE id = $2", &input.links, session_data.user_id)
-        .execute(&state.pg_pool)
-        .await {
-            Ok(_) => {
-                return render_edit_template(input.links, vec!["Links updated successfully".to_string()], vec![]);
-            }
-            Err(err) => {
-                eprintln!("Error updating links: {}", err);
-                return render_edit_template(input.links, vec![], vec!["Something went wrong, please try again".to_string()]);
-            }
+
+    match service::update_links(state, session_data.user_id, &input.links).await {
+        true => {
+            return render_edit_template(&input.links, vec!["Links updated successfully".to_string()], vec![]);
+        },
+        false => {
+            return render_edit_template(&input.links, vec![], vec!["Something went wrong, please try again".to_string()]);
         }
+    }
 }
 
 #[derive(Deserialize)]
@@ -47,45 +45,30 @@ pub struct LoginRequest {
     tag: Option<String>,
 }
 pub async fn login_user(session: Session, State(state): State<AppState>, Form(input): Form<LoginRequest>) -> Response {
-    let res = sqlx::query!("SELECT id, password_hash FROM users WHERE email = $1", input.email)
-        .fetch_one(&state.pg_pool)
-        .await;
+    let res = service::login_user(state, &input.email, &input.password).await;
     match res {
-        Ok(row) => {
-            let id = row.id;
-            let password_hash = match PasswordHash::new(&row.password_hash) {
-                Ok(hash) => hash,
-                Err(err) => {
-                    eprintln!("Failed to parse password hash {:?}", err);
-                    return render_login_template(&input.tag, vec!["Something went wrong, please try again".to_string()]);
-                }
-            };
-            let argon2 = Argon2::default();
-            if argon2.verify_password(input.password.as_bytes(), &password_hash).is_ok() {
-                let session_result = session.insert("data", SessionData{
-                    user_id: id,
-                    email: input.email.clone(),
-                }).await;
-                if session_result.is_err() {
-                    eprintln!("Failed to insert session data: {:?}", session_result.err());
-                    return render_login_template(&input.tag, vec!["Something went wrong, please try again".to_string()]);
-                }
-                // Password is correct, proceed with login
-                if let Some(tag) = input.tag {
-                    return Redirect::to(format!("/assign/{}", tag).as_str()).into_response();
-                } else {
-                    return Redirect::to("/edit").into_response();
-                }
+        LoginOutcome::Success(user_id) => {
+            let session_result = session.insert("data", SessionData {
+                user_id,
+                email: input.email.clone(),
+            }).await;
+            if session_result.is_err() {
+                eprintln!("Failed to insert session data: {:?}", session_result.err());
+                return render_login_template(&input.tag, vec!["Something went wrong, please try again".to_string()]);
+            }
+            // Password is correct, proceed with login
+            if let Some(tag) = input.tag {
+                return Redirect::to(format!("/assign/{}", tag).as_str()).into_response();
             } else {
-                // Password is incorrect
-                return render_login_template(&input.tag, vec!["Invalid email or password".to_string()]);
+                return Redirect::to("/edit").into_response();
             }
         },
-        Err(err) => {
-            eprintln!("Error fetching user: {}", err);
+        LoginOutcome::Failed => {
             return render_login_template(&input.tag, vec!["Invalid email or password".to_string()]);
+        },
+        LoginOutcome::Error => {
+            return render_login_template(&input.tag, vec!["Something went wrong, please try again".to_string()]);
         }
-        
     }
 }
 
@@ -98,57 +81,31 @@ pub struct RegisterRequest {
 }
 
 pub async fn register_user(session: Session, State(state): State<AppState>, Form(input): Form<RegisterRequest>) -> impl IntoResponse {
-    let rng = OsRng::default();
-    let argon2 = Argon2::default();
-    let salt = SaltString::generate(rng);
-    let password_hash = match argon2.hash_password(input.password.as_bytes(), &salt) { 
-        Ok(hash) => hash.to_string(),
-        Err(err) => {
-            eprintln!("Failed to hash password: {:?}", err);
-            return render_register_template(&input.tag, vec!["Something went wrong, please try again".to_string()]);
-        }
-    };
-    let res = sqlx::query!("INSERT INTO users (name, password_hash, email) VALUES ($1, $2, $3) returning id", input.name, password_hash, input.email)
-        .fetch_one(&state.pg_pool)
-        .await;
-
-    let id = match res {
-        Ok(row) => {
-            row.id
-        },
-        Err(err) => {
-            if let sqlx::Error::Database(db_err) = &err {
-                if db_err.code().as_deref() == Some("23505") {
-                    // Postgres unique constraint violation
-                    return render_register_template(&input.tag, vec!["Email already exists".to_string()]);
-                }
+    let res = service::register_user(state, &input.email, &input.password, &input.name).await;
+    match res {
+        service::RegisterOutcome::Success(user_id) => {
+            let session_result = session.insert("data", SessionData {
+                user_id,
+                email: input.email.clone(),
+            }).await;
+            if session_result.is_err() {
+                eprintln!("Failed to insert session data: {:?}", session_result.err());
+                return render_register_template(&input.tag, vec!["Something went wrong, please try again".to_string()]);
             }
-            eprintln!("Error inserting user: {}", err);
+            // Registration successful, redirect to assign or edit
+            if let Some(tag) = input.tag {
+                return Redirect::to(format!("/assign/{}", tag).as_str()).into_response();
+            } else {
+                return Redirect::to("/edit").into_response();
+            }
+        },
+        service::RegisterOutcome::EmailExists => {
+            return render_register_template(&input.tag, vec!["Email already exists".to_string()]);
+        },
+        service::RegisterOutcome::Error => {
             return render_register_template(&input.tag, vec!["Something went wrong, please try again".to_string()]);
         }
-    };
-
-    match session.insert("data", SessionData{
-        user_id: id,
-        email: input.email,
-    }).await {
-        Ok(_) => {}
-        Err(err) => {
-            eprintln!("Failed to insert session data: {:?}", err);
-        }
     }
-
-    
-    return match input.tag {
-        Some(tag) => {
-            Redirect::to(format!("/assign/{}", tag).as_str()).into_response()
-        },
-        None => {
-            Redirect::to("/").into_response()
-        }
-    }
-    
-    
 }
 
 #[derive(Deserialize)]
@@ -168,20 +125,15 @@ pub async fn assign_tag(session: Session, State(state): State<AppState>, Form(in
     else {
         return Redirect::to(format!("/login?tag={}", uuid).as_str()).into_response();
     };
-    
-    let res = sqlx::query!("INSERT INTO tags (id, user_id) VALUES ($1, $2)", uuid, session_data.user_id)
-        .execute(&state.pg_pool)
-        .await;
-    
+
+    let res = service::assign_tag(state, uuid, session_data.user_id).await;
     match res {
-        Ok(_) => {
+        service::AssignOutcome::Success => {
             return Redirect::to("/edit").into_response();
         },
-        Err(err) => {
-            eprintln!("Error assigning tag: {}", err);
+        service::AssignOutcome::Error => {
             return Redirect::to(format!("/{}", input.tag).as_str()).into_response();
         }
-        
     }
 }
 
@@ -269,22 +221,18 @@ pub async fn tag(State(state): State<AppState>, Path(id): Path<String>) -> impl 
         Err(_) => return Redirect::to("/").into_response(),
         
     };
-    let res = sqlx::query!("SELECT links, name FROM users JOIN tags on tags.user_id = users.id WHERE tags.id = $1", uuid)
-        .fetch_one(&state.pg_pool)
-        .await;
-
+    let res = service::get_tag_details(state, uuid).await;
     match res {
-        Ok(row) => {
-            let name = row.name.to_string();  
-            let initial = name.chars().next().map(|c| c.to_ascii_uppercase()).unwrap_or('U');
-            let template = TagTemplate { name: name, initial: initial, links: row.links };
-            return HtmlTemplate(template).into_response();
+        Some(tag_details) => {
+            let template = TagTemplate {
+                name: tag_details.name,
+                initial: tag_details.initial,
+                links: tag_details.links,
+            };
+            HtmlTemplate(template).into_response()
         },
-        Err(_) => {
-            return Redirect::to(format!("/assign/{}", uuid).as_str()).into_response();
-        }
-    }
-    
+        None => Redirect::to(format!("/assign/{}", uuid).as_str()).into_response(),
+    }   
 }
 
 #[derive(Template)]
@@ -297,7 +245,6 @@ pub struct AssignTemplate {
 pub async fn assign(session: Session, Path(id): Path<String>) -> Response {
     let logged_in: bool = session.get::<SessionData>("data").await.unwrap_or(None).is_some();
 
-    println!("Logged in: {}", logged_in);
     let template = AssignTemplate {
         logged_in: logged_in,
         id: id,
@@ -318,21 +265,20 @@ pub async fn edit(session: Session, State(state): State<AppState>) -> Response {
     else {
         return Redirect::to("/login").into_response();
     };
-    let res = sqlx::query!("SELECT links, name FROM users WHERE id = $1", session_data.user_id)
-        .fetch_one(&state.pg_pool)
-        .await;
+
+    let res = service::get_user_links(state, session_data.user_id).await;
 
     match res {
-        Ok(row) => {
-            return render_edit_template(row.links, vec![], vec![]);
+        Some(links) => {
+            return render_edit_template(&links, vec![], vec![]);
         },
-        Err(_) => {
-            return render_edit_template(vec![], vec![], vec!["Something went wrong, please try again".to_string()]);
+        None => {
+            return render_edit_template(&vec![], vec![], vec!["Something went wrong, please try again".to_string()]);
         }
     }
 }
 
-pub fn render_edit_template(links: Vec<String>, messages: Vec<String>, errors: Vec<String>) -> Response {
+pub fn render_edit_template(links: &Vec<String>, messages: Vec<String>, errors: Vec<String>) -> Response {
     let template = EditTemplate { links: links.clone(), messages, errors };
     HtmlTemplate(template).into_response()
 }
